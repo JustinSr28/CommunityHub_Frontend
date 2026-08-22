@@ -5,45 +5,141 @@
     <div class="login-card">
 
       <h1>Iniciar sesión</h1>
-      
-      <div class="form-grupo">
-        <label for="email">Correo electrónico</label>
-        <input id="email" v-model="email" type="email" placeholder="correo@example.com">
-      </div>
-      
-      <div class="form-grupo">
-        <label for="password">Contraseña</label>
-        <input id="password" v-model="password" type="password" placeholder="Ingrese su contraseña">
-      </div>
-      
-      <button @click="loginFunction" class="login-btn">Iniciar sesión </button>
-      
+
+      <form @submit.prevent="loginFunction">
+
+        <div class="form-grupo">
+          <label for="email">Correo electrónico</label>
+
+          <input
+            id="email"
+            v-model="formulario.email"
+            :class="{ 'input-error': errores.email }"
+            type="email"
+            placeholder="correo@example.com"
+          >
+
+          <span v-if="errores.email" class="error">
+            {{ errores.email }}
+          </span>
+        </div>
+
+        <div class="form-grupo">
+          <label for="password">Contraseña</label>
+
+          <input
+            id="password"
+            v-model="formulario.password"
+            :class="{ 'input-error': errores.password }"
+            type="password"
+            placeholder="Ingrese su contraseña"
+          >
+
+          <span v-if="errores.password" class="error">
+            {{ errores.password }}
+          </span>
+        </div>
+
+        <p v-if="error" class="error">
+          {{ error }}
+        </p>
+
+        <button
+          type="submit"
+          class="login-btn"
+          :disabled="loading"
+        >
+          {{ loading ? "Iniciando sesión..." : "Iniciar sesión" }}
+        </button>
+
+      </form>
+
       <div class="separator">
         <span>o</span>
       </div>
-     
 
       <p class="register-text">
         ¿No tienes una cuenta?
-        <NuxtLink to="/registerUser" class="register-link">
+
+        <NuxtLink
+          to="/registerUser"
+          class="register-link"
+        >
           Regístrate
         </NuxtLink>
       </p>
 
     </div>
+
   </div>
+
 </template>
+
 <script setup>
+
 definePageMeta({
   layout: "auth"
 })
+
 const { login } = useAuth()
 
-const email = ref("")
-const password = ref("")
+const { formulario, limpiar } = useForm({
 
-const loginFunction = () => {
-  navigateTo("/dashboard")
+  email: "",
+  password: ""
+
+})
+
+const { errores, validar, limpiarErrores } = useValidation(
+
+  formulario,
+
+  {
+    email: "Ingrese el correo electrónico",
+    password: "Ingrese la contraseña"
+  }
+
+)
+
+const loading = ref(false)
+const error = ref("")
+
+const loginFunction = async () => {
+
+  error.value = ""
+  limpiarErrores()
+
+  if (!validar()) {
+    return
+  }
+
+  loading.value = true
+
+  try {
+
+    await login(
+      formulario.email,
+      formulario.password
+    )
+
+    limpiar()
+
+    await navigateTo("/dashboard")
+
+  } catch (err) {
+
+    console.log("Error al iniciar sesión:", err)
+
+    error.value =
+      err?.data?.message ||
+      err?.message ||
+      "No se pudo iniciar sesión."
+
+  } finally {
+
+    loading.value = false
+
+  }
 }
 
 </script>

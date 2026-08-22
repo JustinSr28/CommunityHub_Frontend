@@ -109,8 +109,8 @@ const cancelar = () => {
             <label>Estado</label>
             <select v-model="formulario.status" :class="{ 'input-error': errores.status }">
                 <option value="">Seleccione un estado</option>
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
+                <option value="active">activo</option>
+                <option value="inactive">inactivo</option>
             </select>
             <span v-if="errores.status" class="error">{{ errores.status }}</span>
         </div>

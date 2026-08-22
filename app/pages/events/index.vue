@@ -166,20 +166,20 @@ const cancelarFormulario = () => {
 const guardarEvent = async (data) => {
   try {
     if (eventEnEdicion.value) {
+
       await editEvent(
         eventEnEdicion.value.id,
         data
       )
+
     } else {
-      const newEvent = {
-        ...data,
-        organizer: user.value.id
-      }
-      console.log("MODO: CREAR")
-      console.log("Datos que se enviarán a addEvent:", newEvent)
-      await addEvent(newEvent)
+
+      await addEvent(data)
+
     }
+
     cancelarFormulario()
+
   } catch (error) {
     console.log(error)
   }

@@ -69,14 +69,14 @@ const cancelarFormulario = () => {
 const guardarUser = async (data) => {
   try {
     if (userEnEdicion.value) {
-      await editUser(
-        userEnEdicion.value.id,
-        data
-      )
+      await editUser(userEnEdicion.value.id, data)
     } else {
       await addUser(data)
     }
+
+    await loadUsers()
     cancelarFormulario()
+
   } catch (error) {
     console.log(error)
   }

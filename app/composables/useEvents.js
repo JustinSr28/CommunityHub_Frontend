@@ -1,61 +1,31 @@
-export const useEvents = () => {
-  const events = ref([
-    {
-      id: 1,
-      title: "Torneo de Fútbol Comunitario",
-      description: "Torneo abierto para jóvenes de la comunidad.",
-      category: "Deportes",
-      date: "2026-08-25",
-      time: "10:00",
-      location: "Plaza de San Rafael",
-      max_capacity: 50,
-      image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55",
-      organizer: 1,
-      status: "Activo",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: 2,
-      title: "Taller de Programación Web",
-      description: "Introducción al desarrollo web con JavaScript.",
-      category: "Educación",
-      date: "2026-08-28",
-      time: "14:00",
-      location: "Centro Comunitario",
-      max_capacity: 30,
-      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3",
-      organizer: 1,
-      status: "Activo",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: 3,
-      title: "Feria de Emprendedores",
-      description: "Espacio para conocer emprendimientos locales.",
-      category: "Emprendimiento",
-      date: "2026-09-02",
-      time: "09:00",
-      location: "Salón Municipal",
-      max_capacity: 100,
-      image: "https://images.unsplash.com/photo-1556761175-b413da4baf72",
-      organizer: 1,
-      status: "Activo",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ])
+import {
+  getEvents,
+  getEventById,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  getEventsByUser as getEventsByUserService,
+  getAvailableEventsForUser as getAvailableEventsForUserService,
+  getEventsByOrganizer as getEventsByOrganizerService,
+  getTotalEvents,
+  getActiveEvents,
+  getFinishedEvents
+} from '~/services/eventsServices'
 
+export const useEvents = () => {
+
+  const events = ref([])
   const event = ref(null)
+
   const loading = ref(false)
   const error = ref(null)
 
   const loadEvents = async () => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 800))
+      events.value = await getEvents()
     } catch (err) {
       error.value = "No se pudieron cargar los eventos."
     } finally {
@@ -66,52 +36,45 @@ export const useEvents = () => {
   const loadEvent = async (id) => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      event.value = events.value.find(
-        event => event.id == id
-      )
+      event.value = await getEventById(id)
     } catch (err) {
       error.value = "No se pudo cargar el evento."
-      event.value = null
     } finally {
       loading.value = false
     }
   }
+const addEvent = async (data) => {
+  loading.value = true
+  error.value = null
 
-  const addEvent = async (data) => {
-    loading.value = true
-    error.value = null
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const newEvent = {
-        ...data,
-        id: Date.now(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-      events.value.push(newEvent)
-    } catch (err) {
-      error.value = "No se pudo crear el evento."
-    } finally {
-      loading.value = false
-    }
+  try {
+
+    const response = await createEvent(data)
+    return response
+
+  } catch (err) {
+    console.error("ERROR AL CREAR EVENTO:", err)
+    console.error("ERROR DEL BACKEND:", err.data)
+
+    error.value = err.data?.message || "No se pudo crear el evento."
+
+    throw err
+
+  } finally {
+    loading.value = false
   }
+}
 
   const editEvent = async (id, data) => {
     loading.value = true
+    error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const index = events.value.findIndex(
-        event => event.id === id
-      )
-      if (index !== -1) {
-        events.value[index] = {
-          ...events.value[index],
-          ...data,
-          updatedAt: new Date()
-        }
-      }
+      return await updateEvent(id, data)
+    } catch (err) {
+      error.value = "No se pudo actualizar el evento."
     } finally {
       loading.value = false
     }
@@ -119,63 +82,98 @@ export const useEvents = () => {
 
   const removeEvent = async (id) => {
     loading.value = true
+    error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      events.value = events.value.filter(
-        event => event.id !== id
-      )
+      return await deleteEvent(id)
+    } catch (err) {
+      error.value = "No se pudo eliminar el evento."
     } finally {
       loading.value = false
     }
   }
 
-  const getEventsByUser = (userId, registrations) => {
-    const userRegistrations = registrations.filter(
-      registration => registration.user == userId
-    )
-    return events.value.filter(event =>
-      userRegistrations.some(
-        registration => registration.event == event.id
-      )
-    )
+  const getEventsByUser = async (userId) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      return await getEventsByUserService(userId)
+    } catch (err) {
+      error.value = "No se pudieron cargar los eventos del usuario."
+    } finally {
+      loading.value = false
+    }
   }
 
-  const getAvailableEventsForUser = (userId, registrations) => {
-    const userRegistrations = registrations.filter(
-      registration => registration.user == userId
-    )
-    return events.value.filter(event =>
-      !userRegistrations.some(
-        registration => registration.event == event.id
-      )
-    )
+  const getAvailableEventsForUser = async (userId) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      return await getAvailableEventsForUserService(userId)
+    } catch (err) {
+      error.value = "No se pudieron cargar los eventos disponibles."
+    } finally {
+      loading.value = false
+    }
   }
 
-  const getEventsByOrganizer = (organizerId) => {
-    return events.value.filter(
-      event => event.organizer == organizerId
-    )
+  const getEventsByOrganizer = async (organizerId) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      return await getEventsByOrganizerService(organizerId)
+    } catch (err) {
+      error.value = "No se pudieron cargar los eventos del organizador."
+    } finally {
+      loading.value = false
+    }
   }
-  
-  //dashboard
-  const loadTotalEvents = async () => { }
-  const loadActiveEvents = async () => { }
-  const loadFinishedEvents = async () => { }
+
+  const loadTotalEvents = async () => {
+    try {
+      return await getTotalEvents()
+    } catch (err) {
+      error.value = "No se pudieron cargar los eventos."
+    }
+  }
+
+  const loadActiveEvents = async () => {
+    try {
+      return await getActiveEvents()
+    } catch (err) {
+      error.value = "No se pudieron cargar los eventos activos."
+    }
+  }
+
+  const loadFinishedEvents = async () => {
+    try {
+      return await getFinishedEvents()
+    } catch (err) {
+      error.value = "No se pudieron cargar los eventos finalizados."
+    }
+  }
+
   return {
     events,
     event,
     loading,
     error,
+
     loadEvents,
     loadEvent,
     addEvent,
     editEvent,
     removeEvent,
+
     getEventsByUser,
     getAvailableEventsForUser,
     getEventsByOrganizer,
+
+    loadTotalEvents,
     loadActiveEvents,
-    loadFinishedEvents,
-    loadTotalEvents
+    loadFinishedEvents
   }
 }

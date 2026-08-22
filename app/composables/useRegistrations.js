@@ -1,140 +1,106 @@
-export const useRegistrations = () => {
-  const registrations = ref([
-    {
-      id: 1,
-      user: 2,
-      event: 1,
-      status: "confirmada",
-      registeredAt: new Date()
-    },
-    {
-      id: 2,
-      user: 3,
-      event: 2,
-      status: "confirmada",
-      registeredAt: new Date()
-    },
-    {
-      id: 4,
-      user: 1,
-      event: 3,
-      status: "confirmada",
-      registeredAt: new Date()
-    },
-    {
-      id: 3,
-      user: 1,
-      event: 2,
-      status: "confirmada",
-      registeredAt: new Date()
-    }
-  ])
+import { ref } from 'vue'
 
+import {
+  getRegistrations,
+  getRegistrationById,
+  getRegistrationsByEvent,
+  getUsersByEvent,
+  getRegistrationsByUser,
+  getRegistrationByEventAndUser as getInscriptionsByEventAndUser,
+  addRegistration as addRegistrationService,
+  editRegistration as editRegistrationService,
+  removeRegistration as removeRegistrationService
+} from '~/services/registrationsServices'
+
+export const useRegistrations = () => {
+
+  const registrations = ref([])
   const registration = ref(null)
+  const userRegistrations = ref([])
+
   const loading = ref(false)
   const error = ref(null)
 
-
+  
   const loadRegistrations = async () => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 800))
+      registrations.value = await getRegistrations()
     } catch (err) {
       error.value = "No se pudieron cargar las inscripciones."
     } finally {
       loading.value = false
     }
   }
- 
+
   const loadRegistration = async (id) => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      registration.value = registrations.value.find(
-        registration => registration.id == id
-      )
+      registration.value = await getRegistrationById(id)
     } catch (err) {
       error.value = "No se pudo cargar la inscripción."
-      registration.value = null
     } finally {
       loading.value = false
     }
   }
-  
+
+ 
   const loadRegistrationsByEvent = async (eventId) => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      return registrations.value.filter(
-        registration => registration.event == eventId
-      )
+      return await getRegistrationsByEvent(eventId)
     } catch (err) {
-      error.value = "No se pudieron cargar las inscripciones del evento."
-      return []
+      error.value =
+        "No se pudieron cargar las inscripciones del evento."
     } finally {
       loading.value = false
     }
   }
 
+  
   const loadUsersByEvent = async (eventId) => {
-
     loading.value = true
     error.value = null
 
     try {
-
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      const eventRegistrations = registrations.value.filter(
-        registration => registration.event == eventId
-      )
-      const userIds = eventRegistrations.map(
-        registration => registration.user
-      )
-
-      return userIds
-
+      return await getUsersByEvent(eventId)
     } catch (err) {
-      error.value ="No se pudieron cargar los usuarios del evento."
-      return []
+      error.value =
+        "No se pudieron cargar los usuarios del evento."
     } finally {
       loading.value = false
     }
   }
-
-  const userRegistrations = ref([])
 
   const loadRegistrationsByUser = async (userId) => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      userRegistrations.value = registrations.value.filter(
-        registration => registration.user == userId
-      )
+      userRegistrations.value = await getRegistrationsByUser(userId)
     } catch (err) {
       error.value =
         "No se pudieron cargar las inscripciones del usuario."
+
       userRegistrations.value = []
     } finally {
       loading.value = false
     }
   }
-  
-  const addRegistration = async (data) => {
+
+
+  const addRegistration = async (eventId, userId) => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const newRegistration = {
-        ...data,
-        id: Date.now(),
-        registeredAt: new Date()
-      }
-      registrations.value.push(newRegistration)
+      return await addRegistrationService(eventId, userId)
     } catch (err) {
       error.value = "No se pudo crear la inscripción."
     } finally {
@@ -142,67 +108,71 @@ export const useRegistrations = () => {
     }
   }
 
+ 
   const editRegistration = async (id, data) => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const index = registrations.value.findIndex(
-        registration => registration.id === id
-      )
-      if (index !== -1) {
-        registrations.value[index] = {
-          ...registrations.value[index],
-          ...data
-        }
-      }
+      return await editRegistrationService(id, data)
     } catch (err) {
       error.value = "No se pudo actualizar la inscripción."
     } finally {
       loading.value = false
     }
   }
- 
-  const removeRegistration = async (id) => {
+
+  const removeRegistration = async (eventId, userId) => {
     loading.value = true
     error.value = null
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      registrations.value = registrations.value.filter(
-        registration => registration.id !== id
-      )
+      return await removeRegistrationService(eventId, userId)
     } catch (err) {
-      error.value = "No se pudo eliminar la inscripción."
+      error.value = "No se pudo cancelar la inscripción."
     } finally {
       loading.value = false
     }
   }
+
   
-  const getRegistrationByEventAndUser = (eventId, userId) => {
-    return registrations.value.find(
-      registration =>
-        registration.event == eventId &&
-        registration.user == userId
-    )
+  const getRegistrationByEventAndUser = async (eventId, userId) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      return await getInscriptionsByEventAndUser(
+        eventId,
+        userId
+      )
+    } catch (err) {
+      return null
+    } finally {
+      loading.value = false
+    }
   }
 
-
-  //dashboard
-  const loadTotalRegistrations = async () => { }
   return {
     registrations,
     registration,
+    userRegistrations,
+
     loading,
     error,
+
     loadRegistrations,
     loadRegistration,
     loadRegistrationsByEvent,
+    loadUsersByEvent,
+    loadRegistrationsByUser,
+
     addRegistration,
     editRegistration,
     removeRegistration,
-    loadRegistrationsByUser,
-    getRegistrationByEventAndUser,
-    userRegistrations,
-    loadUsersByEvent
+    getRegistrationByEventAndUser
   }
+
+    
 }
+    
+  

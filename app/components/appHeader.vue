@@ -30,11 +30,8 @@ import { useAuth } from "../composables/useAuth"
 const { visibleItems } = useMenu()
 const showMenu = ref(false)
 
-const { user } = useAuth()
-const logout = () => {
-    console.log("Logout DE MENTIDAS")
-    showMenu.value = false
-}
+const { user,logout } = useAuth()
+
 
 </script>
 <style scoped>

@@ -15,16 +15,15 @@
     <button type="button" class="volver-login" @click="volverLogin">Volver al login</button>
   </div>
 </template>
-
 <script setup>
+
 definePageMeta({
   layout: "auth"
 })
-import { useUsers } from "~/composables/useUsers"
 
 const router = useRouter()
 
-const {loading,addUser,userExists } = useUsers()
+const { register } = useAuth()
 
 const volverLogin = () => {
   router.push("/")
@@ -32,18 +31,25 @@ const volverLogin = () => {
 
 const guardarUser = async (data) => {
 
-  const existe = userExists(data.email)
- 
-  if (existe) { alert("Ya existe un usuario registrado con este correo.")
-    return
-  }
-  
   try {
-    await addUser(data)
-    alert("Usuario registrado correctamente." )
+
+    await register(data)
+
+    alert("Usuario registrado correctamente.")
+
     router.push("/")
+
   } catch (error) {
-    console.log("Error al registrar usuario:",error)
+
+    console.log(
+      "Error al registrar usuario:",
+      error
+    )
+
+    alert(
+      error?.data?.message ||
+      "No se pudo registrar el usuario."
+    )
   }
 }
 

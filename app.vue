@@ -1,9 +1,11 @@
 <script setup>
+
 const { initAuth } = useAuth()
 
 onMounted(() => {
   initAuth()
 })
+
 </script>
 
 <template>

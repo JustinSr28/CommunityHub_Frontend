@@ -1,6 +1,18 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-08-18',
   modules: ['@vite-pwa/nuxt'],
+  devtools: { enabled: true },
+
+  devServer: {
+    port: 3001
+  },
+
+
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.NUXT_PUBLIC_API_BASE
+    }
+  },
 
   pwa: {
     registerType: 'autoUpdate',
