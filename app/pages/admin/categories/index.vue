@@ -1,33 +1,35 @@
 <template>
 
-  <ReloadButton  :loading="loading"  @reload="loadCategories"/>
+  <ReloadButton :loading="loading" @reload="loadCategories" />
   <div class="category-page">
-   
+
     <h1 class="title">CATEGORIES</h1>
-    
+
     <div class="actions">
       <button @click="mostrarFormulario = !mostrarFormulario" class="btn-primary"> {{ mostrarFormulario ? 'Cancelar' : '+ Nueva Categoría' }} </button>
     </div>
-    
+
     <Transition name="fade">
       <div v-if="mostrarFormulario" class="formulario-seccion">
-        <CategoriesForm :category-inicial="categoryEnEdicion" @guardar="guardarCategory" @cancelar="cancelarFormulario" />
+        <CategoriesForm :category-inicial="categoryEnEdicion" @guardar="guardarCategory"  @cancelar="cancelarFormulario" />
       </div>
     </Transition>
-    
+
     <div class="toolbar">
       <input v-model="busqueda" class="search-input" type="text" placeholder="🔍 Buscar categoría...">
     </div>
-    
+
     <p v-if="loading" class="message"> Cargando categorías... </p>
     <p v-else-if="error" class="message error"> {{ error }} </p>
     <p v-else-if="resultadosFiltrados.length === 0" class="message"> No se encontraron categorías. </p>
-    
+
     <div v-else class="category-grid">
       <div v-for="category in resultadosFiltrados" :key="category.id" class="category-item">
         <CategoriesCard :category="category" @eliminar="confirmarEliminar(category.id)" @editar="iniciarEdicion(category)" />
       </div>
     </div>
+
+    <p v-if="operationError" class="message error">{{ operationError }}</p>
 
     <div class="category-stats">
       <span> Total: {{ categories.length }} categorías </span>
@@ -46,12 +48,12 @@ definePageMeta({
 
 import { useCategories } from "~/composables/useCategories"
 
-const { categories,loading, error,loadCategories, addCategory, editCategory,removeCategory } = useCategories()
+const { categories, loading, error, operationError, loadCategories, addCategory, editCategory, removeCategory } = useCategories()
 
 const mostrarFormulario = ref(false)
 const categoryEnEdicion = ref(null)
 
-const { busqueda,resultadosFiltrados } = useFiltro( categories, ["name"] )
+const { busqueda, resultadosFiltrados } = useFiltro(categories, ["name"])
 
 const iniciarEdicion = (category) => {
   categoryEnEdicion.value = category
@@ -61,6 +63,7 @@ const cancelarFormulario = () => {
   categoryEnEdicion.value = null
   mostrarFormulario.value = false
 }
+
 const guardarCategory = async (data) => {
   try {
     if (categoryEnEdicion.value) {
@@ -72,14 +75,20 @@ const guardarCategory = async (data) => {
       await addCategory(data)
     }
     cancelarFormulario()
+
   } catch (error) {
     console.log(error)
   }
 }
 
-const confirmarEliminar = async (id) => { await removeCategory(id) }
-
-onMounted(async () => {  await loadCategories() })
+const confirmarEliminar = async (id) => {
+  try {
+    await removeCategory(id)
+  } catch (error) {
+    console.log("No se pudo eliminar la categoría:", error)
+  }
+}
+onMounted(async () => { await loadCategories() })
 
 </script>
 
@@ -89,6 +98,7 @@ onMounted(async () => {  await loadCategories() })
   margin: 0 auto;
   padding: 40px 25px;
 }
+
 .title {
   text-align: center;
   color: #12355b;
@@ -97,11 +107,13 @@ onMounted(async () => {  await loadCategories() })
   margin-bottom: 30px;
   letter-spacing: .5px;
 }
+
 .actions {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 25px;
 }
+
 .btn-primary {
   background: #12355b;
   color: white;
@@ -111,23 +123,28 @@ onMounted(async () => {  await loadCategories() })
   font-weight: 700;
   cursor: pointer;
   transition: .2s;
+
   &:hover {
     background: #0f2a4a;
     transform: translateY(-2px);
   }
 }
+
 .formulario-seccion {
   margin-bottom: 35px;
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: .3s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-15px);
 }
+
 .toolbar {
   display: flex;
   gap: 15px;
@@ -140,6 +157,7 @@ onMounted(async () => {  await loadCategories() })
   box-shadow:
     0 5px 15px rgba(15, 42, 74, .06);
 }
+
 .search-input {
   flex: 1;
   padding: .75rem 1rem;
@@ -147,12 +165,14 @@ onMounted(async () => {  await loadCategories() })
   border-radius: 10px;
   font-size: .95rem;
   outline: none;
+
   &:focus {
     border-color: #12355b;
     box-shadow:
       0 0 0 3px rgba(18, 53, 91, .12);
   }
 }
+
 .toolbar select {
   padding: .75rem 1rem;
   border-radius: 10px;
@@ -161,6 +181,7 @@ onMounted(async () => {  await loadCategories() })
   color: #334155;
   cursor: pointer;
 }
+
 .btn-search {
   background: #12355b;
   color: white;
@@ -169,10 +190,12 @@ onMounted(async () => {  await loadCategories() })
   padding: .75rem 1.2rem;
   font-weight: 600;
   cursor: pointer;
+
   &:hover {
     background: #0f2a4a;
   }
 }
+
 .btn-clear {
   background: #f1f5f9;
   color: #334155;
@@ -181,22 +204,27 @@ onMounted(async () => {  await loadCategories() })
   padding: .75rem 1.2rem;
   font-weight: 600;
   cursor: pointer;
+
   &:hover {
     background: #e2e8f0;
   }
 }
+
 .category-grid {
   display: grid;
   grid-template-columns:
     repeat(auto-fit, minmax(250px, 1fr));
   gap: 25px;
 }
+
 .category-item {
   transition: .25s;
+
   &:hover {
     transform: translateY(-4px);
   }
 }
+
 .message {
   text-align: center;
   padding: 40px;
@@ -206,11 +234,13 @@ onMounted(async () => {  await loadCategories() })
   border: 1px solid #e2e8f0;
   margin-top: 20px;
 }
+
 .error {
   color: #dc2626;
   border-color: #fecaca;
   background: #fef2f2;
 }
+
 .category-stats {
   margin-top: 35px;
   padding: 15px 20px;

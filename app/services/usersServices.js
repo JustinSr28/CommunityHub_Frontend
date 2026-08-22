@@ -24,6 +24,10 @@ export const getUserById = (id) => {
   return api()(`/users/${id}`)
 }
 
+export const getOrganizers = () => {
+  return api()('/users/organizers')
+}
+
 export const createUser = (user) => {
   return api()('/users', {
     method: 'POST',

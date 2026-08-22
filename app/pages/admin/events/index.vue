@@ -29,6 +29,7 @@
         <EventsCard :event="event" @eliminar="confirmarEliminar(event.id)" @editar="iniciarEdicion(event)" @ver="verEvents" />
       </div>
     </div>
+     <p v-if="operationError" class="message error">{{ operationError }}</p>
     
     <div class="event-stats">
       <span> Total: {{ events.length }} eventos </span>
@@ -49,7 +50,7 @@ import { useEvents } from "~/composables/useEvents"
 
 const router = useRouter()
 
-const { events,loading, error,loadEvents, addEvent, editEvent,removeEvent } = useEvents()
+const { events,loading, error,operationError,loadEvents, addEvent, editEvent,removeEvent } = useEvents()
 
 const mostrarFormulario = ref(false)
 const eventEnEdicion = ref(null)
@@ -68,7 +69,7 @@ const cancelarFormulario = () => {
 }
 
 const guardarEvent = async (data) => {
-    console.log("DATOS DEL FORMULARIO:", data)
+  
   try {
     if (eventEnEdicion.value) {
       await editEvent(
@@ -78,6 +79,7 @@ const guardarEvent = async (data) => {
     } else {
       await addEvent(data)
     }
+    await loadEvents()
     cancelarFormulario()
   } catch (error) {
     console.log(error)
@@ -88,7 +90,17 @@ const verEvents = (id) => {
    router.push(`/events/${id}`)
 }
 
-const confirmarEliminar = async (id) => { await removeEvent(id) }
+const confirmarEliminar = async (id) => {
+
+  try {
+
+    await removeEvent(id)
+    await loadEvents()
+
+  } catch (error) {  console.log("Error al eliminar evento:",error)
+  }
+
+}
 
 onMounted(async () => {  await loadEvents() })
 

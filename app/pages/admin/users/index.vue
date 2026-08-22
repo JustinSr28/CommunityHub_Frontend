@@ -29,6 +29,7 @@
         <UsersCard :user="user" @eliminar="confirmarEliminar(user.id)" @editar="iniciarEdicion(user)"  />
       </div>
     </div>
+     <p v-if="operationError" class="message error">{{ operationError }}</p>
 
     <div class="user-stats">
       <span> Total: {{ users.length }} usuarios </span>
@@ -49,7 +50,7 @@ import { useUsers } from "~/composables/useUsers"
 
 const router = useRouter()
 
-const { users,loading, error,loadUsers, addUser, editUser,removeUser } = useUsers()
+const { users,loading, error,operationError,loadUsers, addUser, editUser,removeUser } = useUsers()
 
 const mostrarFormulario = ref(false)
 const userEnEdicion = ref(null)
@@ -74,7 +75,7 @@ const guardarUser = async (data) => {
       await addUser(data)
     }
 
-    await loadUsers()
+    
     cancelarFormulario()
 
   } catch (error) {

@@ -5,9 +5,34 @@ export const getEvents = () => {
 }
 
 export const getFilteredEvents = (filters = {}) => {
-  return api()('/events/filter', {
-    query: filters
-  })
+
+  const params = new URLSearchParams()
+
+  if (filters.category) {
+    params.append("category", filters.category)
+  }
+
+  if (filters.date) {
+    params.append("date", filters.date)
+  }
+
+  if (filters.location) {
+    params.append("location", filters.location)
+  }
+
+  if (filters.availability) {
+    params.append("availability", filters.availability)
+  }
+
+  if (filters.organizer) {
+    params.append("organizer", filters.organizer)
+  }
+
+  const query = params.toString()
+
+  return api()(
+    `/events/filter${query ? `?${query}` : ""}`
+  )
 }
 
 export const getAvailableEventsForUser = (userId) => {
@@ -20,6 +45,10 @@ export const getEventsByUser = (userId) => {
 
 export const getEventsByOrganizer = (organizerId) => {
   return api()(`/events/organizer/${organizerId}`)
+}
+
+export const getEventLocations = () => {
+  return api()('/events/locations')
 }
 
 export const getTotalEvents = () => {

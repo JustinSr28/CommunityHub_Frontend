@@ -7,6 +7,8 @@ const props = defineProps({
 const emit = defineEmits(["guardar", "cancelar"])
 
 const { user } = useAuth()
+const { loadOrganizers } = useUsers()
+const { categories, loadCategories } = useCategories()
 const rol = computed(() => user.value?.role)
 const esAdmin = computed(() => rol.value === "admin")
 
@@ -30,36 +32,35 @@ const { errores, validar, limpiarErrores } = useValidation(
     {
         title: "Ingrese el título de la actividad",
         description: "Ingrese la descripción de la actividad",
-        category: "Seleccione una categoría",
+        category: "Ingrese una categoría",
         date: "Ingrese la fecha de la actividad",
         time: "Ingrese la hora de la actividad",
         location: "Ingrese la ubicación de la actividad",
         max_capacity: "Ingrese la capacidad máxima",
-        image: "Ingrese una imagen"
+        image: "Ingrese una imagen",
+
     }
 )
 
 const organizers = ref([])
 
 const cargarOrganizers = async () => {
-    if (!esAdmin.value) {
-        return
+
+    if (!esAdmin.value) { return}
+
+    try {
+        organizers.value = await loadOrganizers()
+    } catch (error) {
+        console.error("Error al cargar organizadores:", error)
     }
-   
-    organizers.value = [
-        {
-            id: 1,
-            name: "Sheyla Murillo"
-        },
-        {
-            id: 2,
-            name: "Carlos Rodríguez"
-        },
-        {
-            id: 3,
-            name: "María López"
-        }
-    ]
+}
+
+const cargarCategorias = async () => {
+    try {
+        await loadCategories()
+    } catch (error) {
+        console.error("Error al cargar categorías:", error)
+    }
 }
 
 watch(
@@ -68,6 +69,7 @@ watch(
         if (event) {
             cargar(event)
         } else {
+
             limpiar()
             formulario.status = "pendiente"
         }
@@ -79,7 +81,10 @@ watch(
 )
 
 onMounted(async () => {
-    await cargarOrganizers()
+    await Promise.all([
+        cargarOrganizers(),
+        cargarCategorias()
+    ])
 })
 
 const enviarFormulario = () => {
@@ -100,7 +105,7 @@ const cancelar = () => {
 
 <template>
     <form @submit.prevent="enviarFormulario" class="event-form">
-       
+
         <div class="form-grupo">
             <label>Título de la actividad</label>
             <input v-model="formulario.title" :class="{ 'input-error': errores.title }" type="text" placeholder="Ej: Workshop de Node.js">
@@ -116,30 +121,12 @@ const cancelar = () => {
         <div class="form-grupo">
             <label>Categoría</label>
             <select v-model="formulario.category" :class="{ 'input-error': errores.category }">
-                <option value="">
-                    Seleccione una categoría
-                </option>
-                <option value="Tecnología">
-                    Tecnología
-                </option>
-                <option value="Deportes">
-                    Deportes
-                </option>
-                <option value="Cultura">
-                    Cultura
-                </option>
-                <option value="Educación">
-                    Educación
-                </option>
-                <option value="Arte">
-                    Arte
-                </option>
-                <option value="Comunidad">
-                    Comunidad
-                </option>
+                <option value="">Seleccione una categoría </option>
+
+                <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }} </option>
             </select>
 
-            <span v-if="errores.category" class="error"> {{ errores.category }}</span>
+            <span v-if="errores.category" class="error">{{ errores.category }}</span>
         </div>
 
         <div class="form-grupo">
@@ -162,22 +149,20 @@ const cancelar = () => {
 
         <div class="form-grupo">
             <label>Capacidad máxima</label>
-            <input v-model="formulario.max_capacity" :class="{ 'input-error': errores.max_capacity }" type="number" min="1" placeholder="Ej: 30">
+            <input v-model="formulario.max_capacity" :class="{ 'input-error': errores.max_capacity }" type="number" min="0" placeholder="Ej: 30">
             <span v-if="errores.max_capacity" class="error">{{ errores.max_capacity }}</span>
         </div>
 
         <div class="form-grupo">
             <label>Imagen</label>
-            <input v-model="formulario.image" :class="{ 'input-error': errores.image }" type="text" placeholder="URL de la imagen">
+            <input v-model="formulario.image" :class="{ 'input-error': errores.image }" type="text"
+                placeholder="URL de la imagen">
             <span v-if="errores.image" class="error">{{ errores.image }} </span>
         </div>
-        
+
         <div class="form-grupo">
             <label>Estado</label>
             <select v-model="formulario.status">
-                <option value="pendiente">
-                    Pendiente
-                </option>
                 <option value="activo">
                     Activo
                 </option>
@@ -191,7 +176,9 @@ const cancelar = () => {
             <label>Organizador</label>
             <select v-model="formulario.organizer">
                 <option value=""> Seleccione un organizador </option>
-                <option v-for="organizer in organizers" :key="organizer.id" :value="organizer.id"> {{ organizer.name }} </option>
+                <option v-for="organizer in organizers" :key="organizer.id" :value="organizer.id"> {{ organizer.name }}
+                    {{ organizer.lastName }}
+                </option>
             </select>
         </div>
 

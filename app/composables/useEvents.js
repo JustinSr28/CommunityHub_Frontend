@@ -1,6 +1,7 @@
 import {
   getEvents,
   getEventById,
+  getFilteredEvents,
   createEvent,
   updateEvent,
   deleteEvent,
@@ -9,7 +10,8 @@ import {
   getEventsByOrganizer as getEventsByOrganizerService,
   getTotalEvents,
   getActiveEvents,
-  getFinishedEvents
+  getFinishedEvents,
+  getEventLocations
 } from '~/services/eventsServices'
 
 export const useEvents = () => {
@@ -20,14 +22,31 @@ export const useEvents = () => {
   const loading = ref(false)
   const error = ref(null)
 
+  const operationError = ref(null)
+  let operationErrorTimeout = null
+
+  const showOperationError = (message) => {
+    operationError.value = message
+    if (operationErrorTimeout) {
+      clearTimeout(operationErrorTimeout)
+    }
+    operationErrorTimeout = setTimeout(() => {
+      operationError.value = null
+    }, 4000)
+  }
+
   const loadEvents = async () => {
     loading.value = true
     error.value = null
-
     try {
       events.value = await getEvents()
+      return events.value
     } catch (err) {
-      error.value = "No se pudieron cargar los eventos."
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pudieron cargar los eventos."
+      throw err
     } finally {
       loading.value = false
     }
@@ -36,45 +55,51 @@ export const useEvents = () => {
   const loadEvent = async (id) => {
     loading.value = true
     error.value = null
-
     try {
       event.value = await getEventById(id)
+      return event.value
     } catch (err) {
-      error.value = "No se pudo cargar el evento."
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pudo cargar el evento."
+      throw err
     } finally {
       loading.value = false
     }
   }
-const addEvent = async (data) => {
-  loading.value = true
-  error.value = null
 
-  try {
-
-    const response = await createEvent(data)
-    return response
-
-  } catch (err) {
-    console.error("ERROR AL CREAR EVENTO:", err)
-    console.error("ERROR DEL BACKEND:", err.data)
-
-    error.value = err.data?.message || "No se pudo crear el evento."
-
-    throw err
-
-  } finally {
-    loading.value = false
+  const addEvent = async (data) => {
+    loading.value = true
+    operationError.value = null
+    try {
+      const response = await createEvent(data)
+      return response
+    } catch (err) {
+      showOperationError(
+        err.data?.message ||
+        err.message ||
+        "No se pudo crear el evento."
+      )
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
-}
 
   const editEvent = async (id, data) => {
     loading.value = true
-    error.value = null
-
+    operationError.value = null
     try {
-      return await updateEvent(id, data)
+      const response = await updateEvent(id, data)
+      return response
     } catch (err) {
-      error.value = "No se pudo actualizar el evento."
+      showOperationError(
+        err.data?.message ||
+        err.message ||
+        "No se pudo actualizar el evento."
+      )
+      throw err
     } finally {
       loading.value = false
     }
@@ -82,12 +107,17 @@ const addEvent = async (data) => {
 
   const removeEvent = async (id) => {
     loading.value = true
-    error.value = null
-
+    operationError.value = null
     try {
-      return await deleteEvent(id)
+      const response = await deleteEvent(id)
+      return response
     } catch (err) {
-      error.value = "No se pudo eliminar el evento."
+      showOperationError(
+        err.data?.message ||
+        err.message ||
+        "No se pudo eliminar el evento."
+      )
+      throw err
     } finally {
       loading.value = false
     }
@@ -96,84 +126,152 @@ const addEvent = async (data) => {
   const getEventsByUser = async (userId) => {
     loading.value = true
     error.value = null
-
     try {
       return await getEventsByUserService(userId)
     } catch (err) {
-      error.value = "No se pudieron cargar los eventos del usuario."
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pudieron cargar los eventos del usuario."
+      throw err
     } finally {
       loading.value = false
     }
   }
 
-  const getAvailableEventsForUser = async (userId) => {
-    loading.value = true
-    error.value = null
-
-    try {
-      return await getAvailableEventsForUserService(userId)
-    } catch (err) {
-      error.value = "No se pudieron cargar los eventos disponibles."
-    } finally {
-      loading.value = false
-    }
+ const getAvailableEventsForUser = async (userId) => {
+  loading.value = true
+  error.value = null
+  try {
+    events.value = await getAvailableEventsForUserService(userId)
+    return events.value
+  } catch (err) {
+    error.value =
+      err.data?.message ||
+      err.message ||
+      "No se pudieron cargar los eventos disponibles."
+    throw err
+  } finally {
+    loading.value = false
   }
+}
 
   const getEventsByOrganizer = async (organizerId) => {
-    loading.value = true
-    error.value = null
-
-    try {
-      return await getEventsByOrganizerService(organizerId)
-    } catch (err) {
-      error.value = "No se pudieron cargar los eventos del organizador."
-    } finally {
-      loading.value = false
-    }
+  loading.value = true
+  error.value = null
+  try {
+    events.value = await getEventsByOrganizerService(organizerId)
+    return events.value
+  } catch (err) {
+    error.value =
+      err.data?.message ||
+      err.message ||
+      "No se pudieron cargar los eventos del organizador."
+    throw err
+  } finally {
+    loading.value = false
   }
+}
 
   const loadTotalEvents = async () => {
+    loading.value = true
+    error.value = null
     try {
       return await getTotalEvents()
     } catch (err) {
-      error.value = "No se pudieron cargar los eventos."
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pudo cargar el total de eventos."
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loadLocations = async () => {
+    loading.value = true
+    error.value = null
+    try {
+      return await getEventLocations()
+    } catch (err) {
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pueden cargar las ubicaciones."
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
   const loadActiveEvents = async () => {
+    loading.value = true
+    error.value = null
     try {
       return await getActiveEvents()
     } catch (err) {
-      error.value = "No se pudieron cargar los eventos activos."
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pudieron cargar los eventos activos."
+      throw err
+    } finally {
+      loading.value = false
     }
   }
 
   const loadFinishedEvents = async () => {
+    loading.value = true
+    error.value = null
     try {
       return await getFinishedEvents()
     } catch (err) {
-      error.value = "No se pudieron cargar los eventos finalizados."
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pudieron cargar los eventos finalizados."
+      throw err
+    } finally {
+      loading.value = false
     }
   }
-
+  
+  const filterEvents = async (filters = {}) => {
+    loading.value = true
+    error.value = null
+    try {
+      events.value = await getFilteredEvents(filters)
+      return events.value
+    } catch (err) {
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "No se pudieron filtrar los eventos."
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+  
   return {
     events,
     event,
     loading,
     error,
-
+    operationError,
     loadEvents,
     loadEvent,
     addEvent,
     editEvent,
     removeEvent,
-
     getEventsByUser,
     getAvailableEventsForUser,
     getEventsByOrganizer,
-
     loadTotalEvents,
     loadActiveEvents,
-    loadFinishedEvents
+    loadFinishedEvents,
+    loadLocations,
+    filterEvents
   }
 }
