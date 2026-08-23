@@ -1,7 +1,8 @@
 import {
   login as loginService,
   register as registerService,
-  logout as logoutService
+  logout as logoutService,
+  me as meService
 } from "~/services/authServices"
 
 export const useAuth = () => {
@@ -59,7 +60,6 @@ export const useAuth = () => {
 
 
   const initAuth = () => {
-
     const savedToken = localStorage.getItem("token")
     const savedUser = localStorage.getItem("user")
 
@@ -69,6 +69,25 @@ export const useAuth = () => {
     }
   }
 
+  const refreshUser = async () => {
+    if (!token.value) return
+
+    try {
+      const response = await meService()
+      user.value = response.user
+      localStorage.setItem("user", JSON.stringify(response.user))
+    } catch (error) {
+      if (error?.status === 401) {
+        token.value = null
+        user.value = null
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+      }
+    }
+  }
+
+  
+
 
   return {
     user,
@@ -76,6 +95,8 @@ export const useAuth = () => {
     login,
     register,
     logout,
-    initAuth
+    initAuth,
+    refreshUser,
+    
   }
 }

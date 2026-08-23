@@ -1,4 +1,5 @@
 export default defineNuxtConfig({
+  ssr: false,
   compatibilityDate: '2026-08-18',
   modules: ['@vite-pwa/nuxt'],
   devtools: { enabled: true },
@@ -6,7 +7,6 @@ export default defineNuxtConfig({
   devServer: {
     port: 3001
   },
-
 
   runtimeConfig: {
     public: {

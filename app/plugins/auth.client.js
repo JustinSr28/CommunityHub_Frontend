@@ -1,7 +1,6 @@
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
+  const { initAuth, refreshUser } = useAuth()
 
-  const { initAuth } = useAuth()
-
-  initAuth()
-
+  initAuth()        
+  await refreshUser()   
 })

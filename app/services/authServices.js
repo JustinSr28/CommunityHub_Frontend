@@ -19,3 +19,9 @@ export const logout = () => {
     method: 'POST'
   })
 }
+
+export const me = () => {
+  return api()('/auth/me', {
+    method: 'GET'
+  })
+}
