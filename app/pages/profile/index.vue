@@ -3,27 +3,28 @@
   <ReloadButton :loading="loading" @reload="recargarPerfil" />
 
   <form @submit.prevent="guardarPerfil" class="profile-form">
-    
+
     <h1 class="title">Mi perfil</h1>
-    
+
     <div class="form-grupo profile-photo">
-      <label>Foto de perfil</label>
+
       <div class="profile-image">
-        <img :src="formulario.urlPhoto" :alt="formulario.name">
+        <img :src="previewPhoto || formulario.urlPhoto || '/images/default-user.png'" :alt="formulario.name">
       </div>
+
+
     </div>
 
-   
     <div class="form-grupo">
       <label>Nombre</label>
       <input v-model="formulario.name" type="text" placeholder="Ingrese su nombre" required>
     </div>
-   
+
     <div class="form-grupo">
       <label>Apellido</label>
       <input v-model="formulario.lastName" type="text" placeholder="Ingrese su apellido" required>
     </div>
-   
+
     <div class="form-grupo">
       <label>Correo</label>
       <input :value="formulario.email" type="email" disabled>
@@ -33,10 +34,12 @@
       <label>Contraseña</label>
       <input v-model="formulario.password" type="password" placeholder="Ingrese su contraseña" required>
     </div>
-   
+
+
     <div class="form-grupo">
-      <label>URL de foto</label>
-      <input v-model="formulario.urlPhoto" type="url" placeholder="Ingrese la URL de su foto">
+      <label>Foto de perfil</label>
+      <input type="file" accept="image/*" @change="handlePhotoChange">
+      <span v-if="photoError" class="error"> {{ photoError }} </span>
     </div>
 
     <div class="form-acciones">
@@ -54,7 +57,24 @@ definePageMeta({
 })
 
 const { user } = useAuth()
-const { user: userData, loading, loadUser,editUser } = useUsers()
+
+const {
+  user: userData,
+  loading,
+  loadUser,
+  editUser
+} = useUsers()
+
+const {
+  selectedPhoto,
+  previewPhoto,
+  loadingPhoto,
+  photoError,
+  handlePhotoChange,
+  uploadPhoto,
+  clearPhoto
+} = useSupabase()
+
 const formulario = ref({
   name: "",
   lastName: "",
@@ -63,46 +83,73 @@ const formulario = ref({
   urlPhoto: ""
 })
 
+const imagenDefault = "/images/default-user.png"
+
 const cargarPerfil = async () => {
+
   if (!user.value) return
+
   await loadUser(user.value.id)
+
   if (userData.value) {
+
     formulario.value = {
       name: userData.value.name || "",
       lastName: userData.value.lastName || "",
       email: userData.value.email || "",
-      password: userData.value.password || "",
-      urlPhoto: userData.value.urlPhoto || ""
+      password: "",
+      urlPhoto: userData.value.urlPhoto || imagenDefault
     }
   }
 }
 
 const recargarPerfil = async () => {
+  clearPhoto()
   await cargarPerfil()
 }
 
 const guardarPerfil = async () => {
+
   if (!userData.value) return
+
   try {
+
+    let photoUrl = formulario.value.urlPhoto || imagenDefault
+    if (selectedPhoto.value) {
+
+      photoUrl = await uploadPhoto()
+
+      if (!photoUrl) {
+        photoUrl = imagenDefault
+      }
+    }
+
     await editUser(
       userData.value.id,
       {
         name: formulario.value.name,
         lastName: formulario.value.lastName,
         password: formulario.value.password,
-        urlPhoto: formulario.value.urlPhoto
+        urlPhoto: photoUrl
       }
     )
+    
+    formulario.value.urlPhoto = photoUrl
+
+    clearPhoto()
+
     alert("Perfil actualizado correctamente.")
+
   } catch (error) {
+
     console.error("Error actualizando perfil:", error)
+
   }
 }
 
 onMounted(async () => {
   await cargarPerfil()
 })
-
 </script>
 
 <style scoped>
@@ -219,5 +266,4 @@ onMounted(async () => {
 .btn-primary:active {
   transform: scale(.97);
 }
-
 </style>

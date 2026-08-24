@@ -9,8 +9,19 @@ const emit = defineEmits(["guardar", "cancelar"])
 const { user } = useAuth()
 const { loadOrganizers } = useUsers()
 const { categories, loadCategories } = useCategories()
+const {
+    selectedPhoto,
+    previewPhoto,
+    loadingPhoto,
+    photoError,
+    handlePhotoChange,
+    uploadPhoto,
+    clearPhoto
+} = useSupabase()
 const rol = computed(() => user.value?.role)
 const esAdmin = computed(() => rol.value === "admin")
+
+const fechaMinima = new Date().toISOString().split('T')[0]
 
 const esEdicion = computed(() => !!props.eventInicial)
 
@@ -37,7 +48,7 @@ const { errores, validar, limpiarErrores } = useValidation(
         time: "Ingrese la hora de la actividad",
         location: "Ingrese la ubicación de la actividad",
         max_capacity: "Ingrese la capacidad máxima",
-        image: "Ingrese una imagen",
+       
 
     }
 )
@@ -66,13 +77,18 @@ const cargarCategorias = async () => {
 watch(
     () => props.eventInicial,
     (event) => {
+        clearPhoto()
         if (event) {
-            cargar(event)
+            cargar({
+                ...event,
+                date: event.date
+                    ? event.date.split("T")[0]
+                    : ""
+            })
         } else {
-
             limpiar()
-            formulario.status = "pendiente"
         }
+
         limpiarErrores()
     },
     {
@@ -81,22 +97,48 @@ watch(
 )
 
 onMounted(async () => {
+
     await Promise.all([
         cargarOrganizers(),
         cargarCategorias()
     ])
+
 })
 
-const enviarFormulario = () => {
+const enviarFormulario = async () => {
+
     if (!validar()) {
+        console.log( "Errores:", errores)
         return
     }
-    emit("guardar", {
-        ...formulario
-    })
+    try {
+        let imageUrl = formulario.image || ""
+        if (selectedPhoto.value) {
+            imageUrl = await uploadPhoto()
+            console.log("Imagen subida:",imageUrl )
+        }
+        else if (!esEdicion.value) {
+            imageUrl = "/images/default-event.png"
+        }
+
+        const data = {
+            ...formulario,
+            image: imageUrl
+        }
+
+        emit(
+            "guardar",
+            data
+        )
+
+    } catch (error) {
+        console.error( " Error al guardar evento:", error )
+    }
 }
 
 const cancelar = () => {
+     clearPhoto()
+
     limpiar()
     limpiarErrores()
     emit("cancelar")
@@ -131,7 +173,7 @@ const cancelar = () => {
 
         <div class="form-grupo">
             <label>Fecha</label>
-            <input v-model="formulario.date" :class="{ 'input-error': errores.date }" type="date">
+            <input v-model="formulario.date" :class="{ 'input-error': errores.date }" type="date" :min="fechaMinima" >
             <span v-if="errores.date" class="error">{{ errores.date }} </span>
         </div>
 
@@ -148,23 +190,78 @@ const cancelar = () => {
         </div>
 
         <div class="form-grupo">
-            <label>Capacidad máxima</label>
+            <label>Capacidad</label>
             <input v-model="formulario.max_capacity" :class="{ 'input-error': errores.max_capacity }" type="number" min="0" placeholder="Ej: 30">
             <span v-if="errores.max_capacity" class="error">{{ errores.max_capacity }}</span>
         </div>
 
         <div class="form-grupo">
-            <label>Imagen</label>
-            <input v-model="formulario.image" :class="{ 'input-error': errores.image }" type="text"
-                placeholder="URL de la imagen">
-            <span v-if="errores.image" class="error">{{ errores.image }} </span>
-        </div>
+
+    <label>Imagen de la actividad</label>
+
+    <input
+        type="file"
+        accept="image/*"
+        @change="handlePhotoChange"
+    >
+
+    <!-- Vista previa de nueva imagen -->
+    <div
+        v-if="previewPhoto"
+        class="photo-preview"
+    >
+
+        <img
+            :src="previewPhoto"
+            alt="Vista previa de la actividad"
+        >
+
+    </div>
+
+    <!-- Imagen actual al editar -->
+    <div
+        v-else-if="formulario.image"
+        class="photo-preview"
+    >
+
+        <img
+            :src="formulario.image"
+            alt="Imagen actual de la actividad"
+        >
+
+    </div>
+
+    <span
+        v-if="photoError"
+        class="error"
+    >
+        {{ photoError }}
+    </span>
+
+    <span
+        v-if="loadingPhoto"
+        class="uploading"
+    >
+        Subiendo imagen...
+    </span>
+
+    <span
+        v-if="errores.image && !formulario.image && !selectedPhoto"
+        class="error"
+    >
+        {{ errores.image }}
+    </span>
+
+</div>
 
         <div class="form-grupo">
             <label>Estado</label>
             <select v-model="formulario.status">
                 <option value="activo">
                     Activo
+                </option>
+                <option value="cancelado">
+                    cancelado
                 </option>
                 <option value="finalizado">
                     Finalizado
@@ -306,5 +403,41 @@ const cancelar = () => {
         border-color: #dc2626 !important;
         box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
     }
+}
+.photo-preview {
+    margin-top: 10px;
+
+    width: 160px;
+    height: 120px;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    border: 1px solid #cbd5e1;
+
+    background: #f8fafc;
+
+    box-shadow:
+        0 4px 10px rgba(15, 42, 74, 0.08);
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+.uploading {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #64748b;
+
+    font-size: 0.85rem;
 }
 </style>

@@ -10,15 +10,18 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE
+      apiBase: process.env.NUXT_PUBLIC_API_BASE,
+
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY
     }
   },
-
-  pwa: {
+pwa: {
     registerType: 'autoUpdate',
 
     devOptions: {
-      enabled: true
+      enabled: true,
+      type: 'module'
     },
 
     manifest: {
@@ -35,13 +38,65 @@ export default defineNuxtConfig({
         {
           src: '/pwa-192x192.jpg',
           sizes: '192x192',
-          type: 'image/jpg'
+          type: 'image/jpeg'
         },
         {
           src: '/pwa-512x512.png',
           sizes: '512x512',
           type: 'image/png'
         }
+      ]
+    },
+
+    workbox: {
+      runtimeCaching: [
+
+        
+        {
+          urlPattern: (options: { url: URL }) => {
+  return options.url.href.includes('/api/categories')
+},
+
+          handler: 'NetworkFirst',
+
+          options: {
+            cacheName: 'communityhub-categories',
+
+            networkTimeoutSeconds: 3,
+
+            expiration: {
+              maxEntries: 30,
+              maxAgeSeconds: 60 * 60 * 24 * 7
+            },
+
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        },
+
+        // =========================
+        // IMÁGENES
+        // =========================
+        {
+          urlPattern: /\.(?:png|jpg|jpeg|webp|svg)$/i,
+
+          handler: 'CacheFirst',
+
+          options: {
+            cacheName: 'communityhub-images',
+
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 30
+            },
+
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        }
+
       ]
     }
   }

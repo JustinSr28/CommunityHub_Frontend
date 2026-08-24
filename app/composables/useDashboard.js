@@ -23,17 +23,18 @@ export const useDashboard = () => {
     }
   }
 
-  const loadOrganizerStats = async () => {
-    loading.value = true
-    error.value = null
-    try {
-      organizerStats.value = await getOrganizerStatsService()
-    } catch (err) {
-      error.value = "No se pudieron cargar las estadísticas."
-    } finally {
-      loading.value = false
-    }
+ const loadOrganizerStats = async () => {
+  loading.value = true
+  error.value = null
+
+  try {
+    organizerStats.value = await getOrganizerStatsService()
+  } catch (err) {
+    error.value = "No se pudieron cargar las estadísticas."
+  } finally {
+    loading.value = false
   }
+}
 
   const loadUserStats = async () => {
   loading.value = true

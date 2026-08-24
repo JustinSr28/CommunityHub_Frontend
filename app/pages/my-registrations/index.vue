@@ -15,7 +15,7 @@
 
     <div v-else class="events-grid">
       <div v-for="event in resultadosFiltrados" :key="event.id" class="event-item">
-        <EventsCard :event="event" modo="mis-eventos" @cancelar-inscripcion="cancelarInscripcion" />
+        <EventsCard :event="event" :es-favorito="esFavorito(event.id)" modo="mis-eventos" @cancelar-inscripcion="cancelarInscripcion" @toggle-favorito="handleToggleFavorito" />
       </div>
     </div>
 
@@ -45,6 +45,7 @@ const esUsuario = computed(() => {
 
 
 const { events, loading, error, getEventsByUser } = useEvents()
+const { favoritos, loadMyFavorites, handleToggleFavorito, esFavorito } = useFavorites()
 
 const {  loadRegistrationsByUser, getRegistrationByEventAndUser, removeRegistration, operationError } = useRegistrations()
 
@@ -91,7 +92,11 @@ const loadMyEvents = async () => {
 }
 
 onMounted(async () => {
-  await loadMyEvents()
+   await Promise.all([
+    loadMyEvents(),
+    loadMyFavorites()
+  ])
+  
 })
 
 </script>

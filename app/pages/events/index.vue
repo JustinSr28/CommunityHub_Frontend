@@ -62,7 +62,7 @@
 
     <div v-else class="events-grid">
       <div v-for="event in resultadosFiltrados" :key="event.id" class="event-item">
-        <EventsCard :event="event" @eliminar="confirmarEliminar" @editar="iniciarEdicion" @ver="verEvents"
+        <EventsCard :event="event"  :es-favorito="esFavorito(event.id)" @eliminar="confirmarEliminar" @editar="iniciarEdicion" @ver="verEvents"
           @ver-usuarios="verUsuarios" @inscribir="inscribir" @toggle-favorito="handleToggleFavorito" />
       </div>
     </div>
@@ -96,22 +96,25 @@ const rol = computed(() => {  return user.value?.role })
 const esOrganizador = computed(() => {return rol.value === "organizer" })
 const esUsuario = computed(() => {return rol.value === "user"})
 
-const handleToggleFavorito = async (event) => { }
+
 
 const { events,loading,error,loadEvents,addEvent,editEvent,removeEvent,getEventsByOrganizer,getAvailableEventsForUser,
   loadLocations,filterEvents, operationError } = useEvents()
 
 const {categories,loadCategories } = useCategories()
 
-const {loadOrganizers } = useUsers()
+const {loadOrganizers} = useUsers()
 
 const {userRegistrations,loadRegistrationsByUser,addRegistration } = useRegistrations()
+const { favoritos, loadMyFavorites, handleToggleFavorito, esFavorito } = useFavorites()
 
 const mostrarFormulario = ref(false)
 const eventEnEdicion = ref(null)
 
 const eventsAMostrar = computed(() => {return events.value })
 const { busqueda, resultadosFiltrados} = useFiltro(  eventsAMostrar,["title"] )
+
+
 
 const filters = reactive({
   category: "",
@@ -253,7 +256,8 @@ const loadMyEvents = async () => {
 onMounted(async () => {
   await Promise.all([
     loadMyEvents(),
-    cargarDatosFiltros()
+    cargarDatosFiltros(),
+    loadMyFavorites()
   ])
 })
 </script>

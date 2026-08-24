@@ -5,8 +5,10 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "@vite-pwa/nuxt": "^1.1.1",
     "dotenv": "^17.4.2",
+    "idb": "^8.0.3",
     "nuxt": "^4.5.2"
   },
   "devDependencies": {

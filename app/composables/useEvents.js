@@ -51,7 +51,7 @@ export const useEvents = () => {
       loading.value = false
     }
   }
-
+  
   const loadEvent = async (id) => {
     loading.value = true
     error.value = null

@@ -1,7 +1,9 @@
 <template>
-  <AdminDashboard v-if="user.role === 'admin'" />
-  <OrganizerDashboard v-else-if="user.role === 'organizer'" />
-  <UserDashboard v-else-if="user.role === 'user'" />
+  <div v-if="user">
+    <AdminDashboard v-if="user.role === 'admin'" />
+    <OrganizerDashboard v-else-if="user.role === 'organizer'" />
+    <UserDashboard v-else-if="user.role === 'user'" />
+  </div>
 </template>
 
 <script setup>

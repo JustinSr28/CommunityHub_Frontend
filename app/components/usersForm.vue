@@ -9,10 +9,25 @@ const emit = defineEmits(["guardar", "cancelar"])
 const esEdicion = computed(() => !!props.userInicial)
 
 const { user } = useAuth()
-const esAdmin = computed(() => { return user.value?.role === "admin" })
+const esAdmin = computed(() => user.value?.role === "admin")
+
+const {
+    selectedPhoto,
+    previewPhoto,
+    loadingPhoto,
+    photoError,
+    handlePhotoChange,
+    uploadPhoto,
+    clearPhoto
+} = useSupabase()
 
 const { formulario, cargar, limpiar } = useForm({
-    name: "", lastName: "", email: "", password: "", urlPhoto: "", role: "user",
+    name: "",
+    lastName: "",
+    email: "",
+    password: "",
+    urlPhoto: "",
+    role: "user",
     status: "active"
 })
 
@@ -23,7 +38,6 @@ const { errores, validar, limpiarErrores } = useValidation(
         lastName: "Ingrese el apellido del usuario",
         email: "Ingrese el correo electrónico",
         password: "Ingrese la contraseña",
-        urlPhoto: "Ingrese la URL de la foto",
         role: "Seleccione un rol",
         status: "Seleccione el estado del usuario"
     }
@@ -32,11 +46,18 @@ const { errores, validar, limpiarErrores } = useValidation(
 watch(
     () => props.userInicial,
     (user) => {
+
+        clearPhoto()
+
         if (user) {
-            cargar(user)
+            cargar({
+                ...user,
+                password: ""
+            })
         } else {
             limpiar()
         }
+
         limpiarErrores()
     },
     {
@@ -44,22 +65,43 @@ watch(
     }
 )
 
-const enviarFormulario = () => {
+const enviarFormulario = async () => {
+
     if (!validar()) {
         return
     }
-    emit("guardar", {
-        ...formulario
-    })
+
+    try {
+
+        let photoUrl = formulario.urlPhoto || ""
+
+        if (selectedPhoto.value) {
+            photoUrl = await uploadPhoto()
+        }
+        
+        else if (!esEdicion.value) {
+            photoUrl = "/images/default-user.png"
+        }
+
+        emit("guardar", {
+            ...formulario,
+            urlPhoto: photoUrl
+        })
+
+    } catch (error) {
+        console.error("Error al guardar usuario:", error)
+    }
 }
 
 const cancelar = () => {
+
+    clearPhoto()
     limpiar()
     limpiarErrores()
     emit("cancelar")
 }
-</script>
 
+</script>
 <template>
 
     <form @submit.prevent="enviarFormulario" class="user-form">
@@ -89,9 +131,17 @@ const cancelar = () => {
         </div>
 
         <div class="form-grupo">
-            <label>Foto de perfil</label>
-            <input v-model="formulario.urlPhoto" :class="{ 'input-error': errores.urlPhoto }" type="text" placeholder="URL de la foto">
-            <span v-if="errores.urlPhoto" class="error">{{ errores.urlPhoto }}</span>
+            <label>Foto de perfil (opcional)</label>
+            <input type="file" accept="image/*" @change="handlePhotoChange" >
+            <div v-if="previewPhoto" class="photo-preview">
+                <img :src="previewPhoto" alt="Vista previa de la foto">
+            </div>
+           
+            <div v-else-if="formulario.urlPhoto" class="photo-preview">
+                <img :src="formulario.urlPhoto" alt="Foto de perfil actual" >
+            </div>
+
+            <span v-if="photoError" class="error"> {{ photoError }} </span>
         </div>
 
         <div v-if="esAdmin" class="form-grupo">
@@ -221,6 +271,69 @@ const cancelar = () => {
     &:focus {
         border-color: #dc2626 !important;
         box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
+    }
+}
+
+.form-grupo:has(.photo-preview) {
+    align-items: center;
+
+    > label {
+        align-self: flex-start;
+    }
+}
+
+.photo-preview {
+    width: 160px;
+    height: 160px;
+    margin: 0.5rem auto 1rem;
+
+    overflow: hidden;
+
+    border-radius: 14px;
+    border: 3px solid #c4c4c5;
+
+    background: #f1f5f9;
+
+    box-shadow:
+        0 6px 18px rgba(15, 42, 74, 0.15);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+
+    &:hover {
+        transform: scale(1.02);
+
+        box-shadow:
+            0 8px 22px rgba(15, 42, 74, 0.22);
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        display: block;
+
+        object-fit: cover;
+    }
+}
+
+.form-grupo input[type="file"] {
+    width: 100%;
+    padding: 0.65rem;
+
+    border: 1px dashed #94a3b8;
+    border-radius: 10px;
+
+    background: #f8fafc;
+    color: #475569;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+    &:hover {
+        border-color: #12355b;
+        background: #f1f5f9;
     }
 }
 </style>
