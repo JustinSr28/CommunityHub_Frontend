@@ -50,9 +50,17 @@
 
       <section class="panel-section">
         <h2 class="section-title">Notificaciones</h2>
-        <div class="event-card pending-card">
-          <span class="pending-badge">Próximamente</span>
+        <div v-if="userStats.notifications && userStats.notifications.length" class="event-list">
+          <div
+            v-for="notification in userStats.notifications"
+            :key="notification.id"
+            class="event-card"
+          >
+            <span class="event-title">{{ notification.message }}</span>
+            <span class="event-date">{{ formatDate(notification.createdAt) }}</span>
+          </div>
         </div>
+        <p v-else class="empty-message">No tienes notificaciones por ahora.</p>
       </section>
     </template>
   </div>
@@ -60,6 +68,16 @@
 
 <script setup>
 const { userStats, loading, error, loadUserStats } = useDashboard()
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('es-CR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 onMounted(() => {
   loadUserStats()
