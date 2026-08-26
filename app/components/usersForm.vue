@@ -48,7 +48,6 @@ watch(
     (user) => {
 
         clearPhoto()
-
         if (user) {
             cargar({
                 ...user,
